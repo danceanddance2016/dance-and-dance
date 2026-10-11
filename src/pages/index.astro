@@ -1,0 +1,190 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Papa from 'papaparse';
+import csvRaw from '../data/Dance&Dance.csv?raw';
+
+// 1. Parsear el CSV
+const parsedData = Papa.parse(csvRaw, {
+  header: true,
+  skipEmptyLines: true
+});
+
+const rawAlbums = parsedData.data;
+
+// 2. Filtrar álbumes válidos y publicados
+const validAlbums = rawAlbums.filter(album => album && album.Title && album.Status === "PUBLISHED");
+
+const allAlbums = validAlbums.map(album => ({
+  ...album,
+  slug: album.Title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-')
+}));
+
+const uniqueAlbums = allAlbums.filter((album, index, self) =>
+  index === self.findIndex((t) => t.Title === album.Title)
+);
+
+// 3. Función para transformar el string de Wix a URL real
+function obtenerUrlWix(wixString) {
+  if (!wixString || !wixString.startsWith('wix:image')) return wixString;
+  const partes = wixString.split('/');
+  const idImagen = partes[partes.length - 2]; 
+  return `https://static.wixstatic.com/media/${idImagen}`;
+}
+
+const sortedAlbums = uniqueAlbums.sort((a, b) => {
+  const dateA = a.Fecha ? new Date(a.Fecha).getTime() : 0;
+  const dateB = b.Fecha ? new Date(b.Fecha).getTime() : 0;
+  if (dateB !== dateA) return dateB - dateA;
+  return a.Title.localeCompare(b.Title);
+});
+
+const latestCompilations = sortedAlbums.filter(a => a.Categoría === 'Compilation').slice(0, 4);
+const latestPlaylists = sortedAlbums.filter(a => a.Categoría === 'Playlist').slice(0, 4);
+const latestArtists = sortedAlbums.filter(a => a.Categoría === 'Artist').slice(0, 4);
+---
+
+<Layout title="Latest | Dance & Dance">
+	<div class="latest-page-container">
+		
+		<!-- CABECERA PRINCIPAL: LATEST -->
+		<div class="latest-header-wrapper">
+			<h1 class="latest-main-title">Latest</h1>
+		</div>
+
+		<!-- COMPILATIONS -->
+		<div class="category-section">
+			<h2 class="wix-category-title">Compilations</h2>
+			<div class="albums-grid">
+				{latestCompilations.map((album) => {
+					const imagenReal = obtenerUrlWix(album.Image);
+					return (
+						<article style="text-align: center;">
+							<a href={`/compilations/${album.slug}`} style="color: #000000; text-decoration: none; display: block;">
+								<div class="image-card-wrapper">
+									<img src={imagenReal} alt={album.Title} style="width: 100%; height: 100%; object-fit: cover; display: block;" loading="lazy" />
+								</div>
+							</a>
+						</article>
+					);
+				})}
+			</div>
+		</div>
+
+		<!-- PLAYLISTS -->
+		<div class="category-section">
+			<h2 class="wix-category-title">Playlists</h2>
+			<div class="albums-grid">
+				{latestPlaylists.map((album) => {
+					const imagenReal = obtenerUrlWix(album.Image);
+					return (
+						<article style="text-align: center;">
+							<a href={`/playlists/${album.slug}`} style="color: #000000; text-decoration: none; display: block;">
+								<div class="image-card-wrapper">
+									<img src={imagenReal} alt={album.Title} style="width: 100%; height: 100%; object-fit: cover; display: block;" loading="lazy" />
+								</div>
+							</a>
+						</article>
+					);
+				})}
+			</div>
+		</div>
+
+		<!-- ARTIST COMPILATIONS -->
+		<div class="category-section">
+			<h2 class="wix-category-title">Artist Compilations</h2>
+			<div class="albums-grid">
+				{latestArtists.map((album) => {
+					const imagenReal = obtenerUrlWix(album.Image);
+					return (
+						<article style="text-align: center;">
+							<a href={`/artist-compilations/${album.slug}`} style="color: #000000; text-decoration: none; display: block;">
+								<div class="image-card-wrapper">
+									<img src={imagenReal} alt={album.Title} style="width: 100%; height: 100%; object-fit: cover; display: block;" loading="lazy" />
+								</div>
+							</a>
+						</article>
+					);
+				})}
+			</div>
+		</div>
+	</div>
+</Layout>
+
+<style is:global>
+  .latest-page-container {
+    max-width: 950px;
+    margin: 10px auto 10px auto !important;
+    font-family: 'Work Sans', sans-serif;
+    padding: 0 20px;
+  }
+  .latest-header-wrapper {
+    text-align: center;
+    margin-bottom: 15px !important;
+  }
+  .latest-main-title {
+    font-family: 'Work Sans', sans-serif !important;
+    font-size: 74px !important;
+    font-style: italic !important;
+    font-weight: 400 !important;
+    line-height: 0.7em !important;
+    letter-spacing: 0.01em !important;
+    color: #E0DEDE !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    text-align: center !important;
+  }
+  .category-section {
+    margin-bottom: 10px !important;
+  }
+  .wix-category-title {
+    font-family: 'Work Sans', sans-serif !important;
+    font-size: 39px !important;
+    font-style: italic !important;
+    font-weight: 400 !important;
+    line-height: 1em !important;
+    letter-spacing: 0.01em !important;
+    color: #151515 !important;
+    border-bottom: none !important;
+    padding: 0 !important;
+    margin: 0 0 6px 0 !important;
+    text-transform: none !important;
+    text-align: center !important;
+  }
+  .albums-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 25px;
+  }
+
+  .image-card-wrapper {
+    width: 100%;
+    aspect-ratio: 1/1;
+    overflow: hidden;
+    margin: 0 auto;
+    border: 1px solid #000000;
+    border-radius: 12px;
+    background-color: #fcfcfc;
+    transition: transform 0.3s ease;
+  }
+
+  .image-card-wrapper:hover {
+    transform: scale(1.03);
+  }
+
+  /* Adaptabilidad móvil: 2 por línea */
+  @media (max-width: 768px) {
+    .latest-page-container {
+      padding: 0 10px;
+    }
+    .latest-main-title {
+      font-size: 44px !important;
+    }
+    .wix-category-title {
+      font-size: 26px !important;
+    }
+    .albums-grid {
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 12px !important;
+    }
+  }
+</style>

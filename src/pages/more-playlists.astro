@@ -1,0 +1,148 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="+ Playlists | Dance & Dance">
+  <div class="more-playlists-container">
+    
+    <!-- CABECERA -->
+    <div class="playlists-header-wrapper">
+      <h1 class="playlists-main-title">
+        + Playlists
+      </h1>
+    </div>
+
+    <!-- SUBTÍTULO -->
+    <h2 class="playlists-subtitle">
+      Stream On:
+    </h2>
+
+    <!-- CONTENEDOR ADAPTATIVO -->
+    <div class="platforms-wrapper">
+      <div class="platforms-grid-hybrid">
+        
+        <!-- Spotify -->
+        <a href="https://open.spotify.com/user/danceanddance2016/playlists" target="_blank" class="platform-btn" title="Listen on Spotify">
+          <img src="/images/logo_spotify_onlight.svg" alt="Spotify" class="platform-logo-hybrid" />
+        </a>
+
+        <!-- Deezer -->
+        <a href="https://www.deezer.com/es/profile/1501757982/followers" target="_blank" class="platform-btn" title="Listen on Deezer">
+          <img src="/images/Logo Horizontal (1) (1).png" alt="Deezer" class="platform-logo-hybrid" />
+        </a>
+
+        <!-- YouTube Music -->
+        <a href="https://music.youtube.com/@dancedance902" target="_blank" class="platform-btn" title="Listen on YouTube Music">
+          <img src="/images/yt_music_full_rgb_black.png" alt="YouTube Music" class="platform-logo-hybrid" />
+        </a>
+
+        <!-- YouTube Video -->
+        <a href="https://www.youtube.com/@dancedance902" target="_blank" class="platform-btn" title="Watch on YouTube">
+          <img src="/images/logo_youtube_onlight.svg" alt="YouTube Video" class="platform-logo-hybrid" />
+        </a>
+
+      </div>
+    </div>
+
+  </div>
+</Layout>
+
+<style is:global>
+  .more-playlists-container {
+    max-width: 950px;
+    margin: 10px auto 0px auto;
+    font-family: 'Work Sans', sans-serif;
+    padding: 0 20px;
+    text-align: center;
+  }
+
+  .playlists-header-wrapper {
+    text-align: center;
+    margin-bottom: 12px !important;
+  }
+
+  .playlists-main-title {
+    font-family: 'Work Sans', sans-serif !important;
+    font-size: 74px !important;
+    font-style: italic !important;
+    font-weight: 400 !important;
+    line-height: 0.7em !important;
+    letter-spacing: normal !important;
+    color: #E0DEDE !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    text-align: center !important;
+  }
+
+  .playlists-subtitle {
+    font-family: 'Work Sans', sans-serif !important;
+    font-size: 35px !important;
+    font-style: italic !important;
+    font-weight: 400 !important;
+    color: #000000 !important;
+    margin: 25px 0 35px 0 !important;
+    text-align: center !important;
+    letter-spacing: normal !important;
+  }
+
+  .platforms-wrapper {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+
+  /* 💻 ORDENADOR: Cuadrícula equilibrada de 2x2 con logos grandes */
+  .platforms-grid-hybrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 35px 60px;
+    max-width: 650px;
+    width: 100%;
+    align-items: center;
+    justify-items: center;
+    margin: 0 auto;
+  }
+
+  .platform-logo-hybrid {
+    height: 95px !important;
+    max-width: 100% !important;
+    width: auto !important;
+    object-fit: contain;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+
+  .platform-logo-hybrid:hover {
+    transform: scale(1.05);
+  }
+
+  .platform-btn {
+    display: inline-block;
+    text-decoration: none;
+  }
+
+  /* 📱 MÓVIL: Pasa automáticamente a 1 sola columna vertical con logos bien grandes */
+  @media (max-width: 768px) {
+    .more-playlists-container {
+      padding: 0 10px;
+    }
+
+    .playlists-main-title {
+      font-size: 44px !important;
+    }
+
+    .playlists-subtitle {
+      font-size: 26px !important;
+      margin: 15px 0 20px 0 !important;
+    }
+
+    .platforms-grid-hybrid {
+      grid-template-columns: 1fr !important; /* Una sola columna en el móvil */
+      gap: 18px !important;
+      max-width: 320px !important;
+    }
+
+    .platform-logo-hybrid {
+      height: 75px !important; /* Gran tamaño vertical y cómodo para pulsar */
+    }
+  }
+</style>

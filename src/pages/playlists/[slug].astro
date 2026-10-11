@@ -1,0 +1,380 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Papa from 'papaparse';
+import csvRaw from '../../data/Dance&Dance.csv?raw';
+
+export async function getStaticPaths() {
+  const parsedData = Papa.parse(csvRaw, { header: true, skipEmptyLines: true });
+  const rawAlbums = parsedData.data;
+
+  const valid = rawAlbums.filter(a => a && a.Title && a.Status === "PUBLISHED");
+  const sorted = valid.map(a => ({
+    ...a,
+    slug: a.Title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-')
+  })).filter((a, i, s) => i === s.findIndex((t) => t.Title === a.Title)).sort((a, b) => {
+    return (b.Fecha ? new Date(b.Fecha).getTime() : 0) - (a.Fecha ? new Date(a.Fecha).getTime() : 0);
+  });
+
+  function getAlbumUrl(album) {
+    if (!album) return null;
+    if (album.Categoría === 'Compilation') return `/compilations/${album.slug}`;
+    if (album.Categoría === 'Playlist') return `/playlists/${album.slug}`;
+    if (album.Categoría === 'Artist') return `/artist-compilations/${album.slug}`;
+    return `/${album.slug}`;
+  }
+
+  return sorted.map((album, index) => ({
+    params: { slug: album.slug },
+    props: { 
+      album,
+      newerSlug: index > 0 ? getAlbumUrl(sorted[index - 1]) : null,
+      olderSlug: index < sorted.length - 1 ? getAlbumUrl(sorted[index + 1]) : null
+    }
+  }));
+}
+
+const { album, newerSlug, olderSlug } = Astro.props;
+
+function obtenerUrlWix(wixString) {
+  if (!wixString || !wixString.startsWith('wix:image')) return wixString;
+  const partes = wixString.split('/');
+  const idImagen = partes[partes.length - 2]; 
+  return `https://static.wixstatic.com/media/${idImagen}`;
+}
+
+const imagenReal = obtenerUrlWix(album.Image);
+let genre = album.Género && album.Género.startsWith('[') ? JSON.parse(album.Género).join(', ') : album.Género;
+let released = album["Fecha Mostrar"] ? album["Fecha Mostrar"].replace(/<[^>]*>/g, '') : "";
+
+let tracklistLimpio = album.Tracklist || "";
+if (tracklistLimpio) {
+  tracklistLimpio = tracklistLimpio
+    .replace(/(<p>&nbsp;<\/p>|<p>\s*<\/p>|<p><br><\/p>|<br\s*\/?>)+\s*$/gi, '')
+    .trim();
+}
+
+let backUrl = "/all-albums";
+if (album.Categoría === 'Compilation') {
+  backUrl = "/compilations";
+} else if (album.Categoría === 'Playlist') {
+  backUrl = "/playlists";
+} else if (album.Categoría === 'Artist') {
+  backUrl = "/artist-compilations";
+}
+---
+
+<Layout title={`${album.Title} | Dance & Dance`}>
+  <div class="detail-container">
+    <div style="margin-bottom: 15px; font-style: italic;"><a href={backUrl} style="color:#000;">← Return</a></div>
+
+    <!-- CONTENEDOR FLEX PRINCIPAL -->
+    <div class="detail-grid">
+      
+      <!-- COLUMNA IZQUIERDA: Información y Plataformas -->
+      <div class="detail-info-col">
+        <h1 class="album-main-title">
+          {album.Title}
+        </h1>
+
+        {album.Description && album.Description !== album.Title && (
+          <h3 class="album-desc">
+            {album.Description}
+          </h3>
+        )}
+
+        <!-- METADATOS -->
+        <div class="meta-info-box">
+          {genre && (
+            <div class="meta-row">
+              <span class="meta-label">Genre:</span>
+              <span class="meta-value">{genre}</span>
+            </div>
+          )}
+          {released && (
+            <div class="meta-row">
+              <span class="meta-label">Released:</span>
+              <span class="meta-value">{released}</span>
+            </div>
+          )}
+        </div>
+
+        <div class="stream-on-title">
+            Stream On:
+        </div>
+
+        <div class="platforms-grid">
+          {album["Link Spotify"] ? (
+            <a href={album["Link Spotify"]} target="_blank" class="platform-btn" title="Listen on Spotify">
+              <img src="/images/logo_spotify_onlight.svg" alt="Spotify" class="platform-logo" />
+            </a>
+          ) : (
+            <div class="platform-btn disabled" title="Spotify not available">
+              <img src="/images/logo_spotify_onlight.svg" alt="Spotify" class="platform-logo" />
+            </div>
+          )}
+
+          {album["Link Deezer"] ? (
+            <a href={album["Link Deezer"]} target="_blank" class="platform-btn" title="Listen on Deezer">
+              <img src="/images/Logo Horizontal (1) (1).png" alt="Deezer" class="platform-logo" />
+            </a>
+          ) : (
+            <div class="platform-btn disabled" title="Deezer not available">
+              <img src="/images/Logo Horizontal (1) (1).png" alt="Deezer" class="platform-logo" />
+            </div>
+          )}
+
+          {album["Link YouTube Music"] ? (
+            <a href={album["Link YouTube Music"]} target="_blank" class="platform-btn" title="Listen on YouTube Music">
+              <img src="/images/yt_music_full_rgb_black.png" alt="YouTube Music" class="platform-logo" />
+            </a>
+          ) : (
+            <div class="platform-btn disabled" title="YouTube Music not available">
+              <img src="/images/yt_music_full_rgb_black.png" alt="YouTube Music" class="platform-logo" />
+            </div>
+          )}
+
+          {album["Link YouTube Video"] ? (
+            <a href={album["Link YouTube Video"]} target="_blank" class="platform-btn" title="Watch on YouTube">
+              <img src="/images/logo_youtube_onlight.svg" alt="YouTube Video" class="platform-logo" />
+            </a>
+          ) : (
+            <div class="platform-btn disabled" title="YouTube Video not available">
+              <img src="/images/logo_youtube_onlight.svg" alt="YouTube Video" class="platform-logo" />
+            </div>
+          )}
+        </div>
+      </div>
+
+      <!-- COLUMNA DERECHA: Imagen y Flechas -->
+      <div class="detail-image-col">
+        {album.Image && (
+          <div class="image-box-wrapper">
+            <img src={imagenReal} alt={album.Title} class="album-detail-img" />
+            <div class="nav-arrows-wrapper">
+              <div>{newerSlug ? <a href={newerSlug} style="color:#000; text-decoration:none;">«</a> : <span style="color:#ccc;">«</span>}</div>
+              <div>{olderSlug ? <a href={olderSlug} style="color:#000; text-decoration:none;">»</a> : <span style="color:#ccc;">»</span>}</div>
+            </div>
+          </div>
+        )}
+      </div>
+
+    </div>
+
+    <!-- TRACKLIST -->
+    <div style="margin-top: 20px; margin-bottom: 0; padding-bottom: 0;">
+      <h3 class="tracklist-header">TRACKLIST</h3>
+      <div style="border-bottom: 2px solid #e0e0e0; margin-bottom: 12px; width: 100%;"></div>
+      <div class="wix-tracklist" set:html={tracklistLimpio} style="margin-bottom: 0; padding-bottom: 0;" />
+    </div>
+  </div>
+</Layout>
+
+<style is:global>
+  .detail-container {
+    max-width: 950px;
+    margin: 10px auto 10px auto;
+    font-family: 'Work Sans', sans-serif;
+    padding: 0 20px;
+  }
+
+  .detail-grid {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+  }
+
+  .detail-info-col {
+    flex: 1;
+  }
+
+  .detail-image-col {
+    width: 318px;
+    flex-shrink: 0;
+    text-align: center;
+  }
+
+  .album-main-title {
+    margin: 0 0 6px 0;
+    font-size: 28px;
+    font-weight: 400;
+    font-style: italic;
+    color: #222222;
+    line-height: 1.2;
+  }
+
+  .album-desc {
+    margin: 0 0 15px 0;
+    font-size: 17px;
+    color: #666666;
+    font-weight: 400;
+    font-style: italic;
+    line-height: 1.3;
+  }
+
+  .meta-info-box {
+    margin-bottom: 20px;
+    font-size: 15px;
+  }
+
+  .meta-row {
+    display: flex;
+    margin-bottom: 4px;
+  }
+
+  .meta-label {
+    font-weight: 600;
+    width: 80px;
+    text-align: right;
+    padding-right: 12px;
+  }
+
+  .meta-value {
+    flex: 1;
+  }
+
+  .stream-on-title {
+    font-family: 'Work Sans', sans-serif;
+    font-size: 36px;
+    font-weight: 600;
+    font-style: italic;
+    color: #cccccc;
+    margin-bottom: 12px;
+    line-height: 1.2;
+    text-align: center; /* Centrado universal para PC y Móvil */
+    max-width: 380px;
+  }
+
+  .platforms-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px 24px;
+    max-width: 380px;
+    margin-bottom: 15px;
+    align-items: center;
+    justify-items: center;
+  }
+
+  .platform-logo {
+    height: 48px !important;
+    max-width: 100% !important;
+    width: auto !important;
+    object-fit: contain;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+  .platform-logo:hover {
+    transform: scale(1.05);
+  }
+  .platform-logo.disabled {
+    opacity: 0.3;
+    filter: grayscale(100%);
+    cursor: not-allowed;
+  }
+
+  .image-box-wrapper {
+    display: inline-block;
+    width: 318px;
+    text-align: center;
+  }
+
+  .album-detail-img {
+    width: 318px;
+    height: 318px;
+    border: 1px solid #000000;
+    border-radius: 12px;
+    object-fit: cover;
+    display: block;
+  }
+
+  .nav-arrows-wrapper {
+    display: flex;
+    justify-content: space-between;
+    width: 318px;
+    margin-top: 12px;
+    font-size: 1.2rem;
+    font-family: sans-serif;
+    font-weight: bold;
+  }
+
+  .tracklist-header {
+    font-family: 'Work Sans', sans-serif !important;
+    font-size: 20px !important;
+    font-style: italic !important;
+    font-weight: 400 !important;
+    color: #222222 !important;
+    margin: 0 0 8px 0 !important;
+    text-transform: none !important;
+  }
+  .wix-tracklist ol { 
+    padding-left: 20px !important; 
+    margin: 0 !important; 
+  }
+  .wix-tracklist li { 
+    font-family: arial, sans-serif !important; 
+    font-size: 16px !important; 
+    margin: 0 0 2px 0 !important; 
+    color: #222222 !important; 
+    line-height: 1.4em !important; 
+  }
+  .wix-tracklist p { 
+    display: inline !important; 
+    margin: 0 !important; 
+    padding: 0 !important;
+    line-height: 1.4em !important;
+  }
+
+  /* 📱 ADAPTABILIDAD MÓVIL OPTIMIZADA SIN ESPACIOS */
+  @media (max-width: 768px) {
+    .detail-container {
+      padding: 0 10px;
+    }
+
+    .detail-grid {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .detail-info-col {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center; /* Centra todo el bloque de texto y botones en móvil */
+      text-align: center;
+    }
+
+    .meta-row {
+      justify-content: center;
+    }
+
+    .meta-label {
+      text-align: right;
+    }
+
+    .detail-image-col {
+      width: 100%;
+      order: -1; /* Mantiene la portada arriba */
+      margin-bottom: 0;
+    }
+
+    .image-box-wrapper {
+      width: 260px !important; /* Ancho fluido adaptado a pantalla pequeña */
+    }
+
+    .album-detail-img {
+      width: 260px !important;
+      height: 260px !important;
+    }
+
+    .nav-arrows-wrapper {
+      width: 260px !important;
+    }
+
+    .platforms-grid {
+      width: 100%;
+      max-width: 280px;
+      margin: 0 auto 15px auto;
+      justify-items: center;
+    }
+  }
+</style>
