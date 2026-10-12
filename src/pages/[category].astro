@@ -74,7 +74,7 @@ const anosOrdenados = Object.keys(albumsPorAno).sort((a, b) => {
 });
 ---
 
-<Layout title={`${pageTitle} | Dance & Dance`}>
+<Layout title={`${pageTitle}`}>
   <div class="catalog-container">
     
     <h1 class="page-title">{pageTitle}</h1>
@@ -100,7 +100,7 @@ const anosOrdenados = Object.keys(albumsPorAno).sort((a, b) => {
 
 <style is:global>
   .catalog-container {
-    max-width: 1250px;
+    max-width: 950px; /* <--- Igual que en index.astro */
     margin: 10px auto 10px auto !important;
     padding: 0 20px;
     font-family: 'Work Sans', sans-serif;
@@ -133,47 +133,47 @@ const anosOrdenados = Object.keys(albumsPorAno).sort((a, b) => {
     border: none !important;
   }
 
-  .albums-flex-grid {
+ .albums-flex-grid {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
-    gap: 20px 18px;
-    max-width: 1000px;
+    justify-content: center; /* Centra perfectamente cualquier fila incompleta */
+    gap: 25px;
+    max-width: 950px; /* Exactamente el mismo ancho máximo que el index.astro */
     margin: 0 auto;
-  }
-
-  .albums-flex-grid.grid-5-cols-mode {
-    max-width: 1200px;
   }
 
   .album-card {
     text-decoration: none;
     color: inherit;
-    display: flex;
-    flex-direction: column;
-    width: 200px;
+    display: block;
+    text-align: center;
+    /* Calculamos exactamente el ancho para que quepan 4 por fila con un gap de 25px: (950 - (3 * 25)) / 4 = 218.75px */
+    width: 218px; 
   }
 
   .image-wrapper {
     width: 100%;
-    aspect-ratio: 1 / 1;
+    aspect-ratio: 1/1;
     overflow: hidden;
-    border-radius: 8px;
-    border: 1px solid #e0e0e0;
+    margin: 0 auto;
+    border: 1px solid #000000;
+    border-radius: 12px;
+    background-color: #fcfcfc;
+    transition: transform 0.3s ease;
   }
 
   .image-wrapper img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.3s ease;
+    display: block;
   }
 
   .album-card:hover .image-wrapper img {
     transform: scale(1.03);
   }
 
-  /* 📱 ADAPTABILIDAD MÓVIL: 3 Portadas por línea */
+  /* 📱 ADAPTABILIDAD MÓVIL: 2 Portadas por línea */
   @media (max-width: 768px) {
     .catalog-container {
       padding: 0 10px;
@@ -191,11 +191,11 @@ const anosOrdenados = Object.keys(albumsPorAno).sort((a, b) => {
 
     .albums-flex-grid, 
     .albums-flex-grid.grid-5-cols-mode {
-      gap: 10px 8px;
+      gap: 12px 10px;
     }
 
     .album-card {
-      width: 31% !important;
+      width: 48% !important; /* Cambiado a 48% para que entren exactamente 2 por fila */
       max-width: none;
     }
   }
