@@ -11,13 +11,14 @@
     "preview": "astro preview",
     "astro": "astro"
   },
-  "dependencies": {
+"dependencies": {
     "@astrojs/vercel": "^11.0.14",
     "@opacedev/astro-visual-editor": "^0.1.0-beta.7",
     "@types/papaparse": "^5.5.2",
+    "astro": "^7.3.8",
     "papaparse": "^5.7.0",
     "sanity-plugin-csv-import": "^0.1.1"
-  },
+  },,
   "allowScripts": {
     "esbuild": true
   },
