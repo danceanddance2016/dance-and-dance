@@ -56,7 +56,9 @@ if (category === 'compilations') pageTitle = "Compilations";
 else if (category === 'playlists') pageTitle = "Playlists";
 else if (category === 'artist-compilations') pageTitle = "Artist Compilations";
 
-const albumsPorAno = albums.reduce((acc, album) => {
+const safeAlbums = albums || [];
+
+const albumsPorAno = safeAlbums.reduce((acc, album) => {
   let anoCrudo = album.Año && album.Año.trim() !== "" ? album.Año.trim() : (album.Fecha ? new Date(album.Fecha).getFullYear().toString() : 'Other');
   const ano = anoCrudo.replace(/[\[\]"]/g, '').trim();
 
