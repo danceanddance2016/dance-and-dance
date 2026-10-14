@@ -1,9 +1,7 @@
-// @ts-check
 import { defineConfig } from 'astro/config';
+import vercel from '@astrojs/vercel';
 
-import opacedevvisualEditor from '@opacedev/astro-visual-editor';
-
-// https://astro.build/config
 export default defineConfig({
-  integrations: [opacedevvisualEditor()]
+  output: 'server', // <-- ESTO ES LO IMPORTANTE: cambia SSG por SSR
+  adapter: vercel(),
 });
