@@ -3,39 +3,43 @@ import Layout from '../layouts/Layout.astro';
 import Papa from 'papaparse';
 import csvRaw from '../data/Dance&Dance.csv?raw';
 
-export async function getStaticPaths() {
-  const parsedData = Papa.parse(csvRaw, { header: true, skipEmptyLines: true });
-  const rawAlbums = parsedData.data;
+// 1. Detectar automáticamente la categoría según la URL actual
+const pathname = Astro.url.pathname;
+let category = 'all-albums';
+let pageTitle = "All Albums";
 
-  const categories = ['compilations', 'playlists', 'artist-compilations', 'all-albums'];
-
-  return categories.map(category => {
-    let validAlbums = rawAlbums.filter(a => a && a.Title && a.Status === "PUBLISHED");
-    
-    if (category === 'compilations') {
-      validAlbums = validAlbums.filter(a => a.Categoría === 'Compilation');
-    } else if (category === 'playlists') {
-      validAlbums = validAlbums.filter(a => a.Categoría === 'Playlist');
-    } else if (category === 'artist-compilations') {
-      validAlbums = validAlbums.filter(a => a.Categoría === 'Artist');
-    }
-
-    const processedAlbums = validAlbums.map(a => ({
-      ...a,
-      slug: a.Title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-')
-    })).filter((a, i, s) => i === s.findIndex((t) => t.Title === a.Title))
-    .sort((a, b) => {
-      return (b.Fecha ? new Date(b.Fecha).getTime() : 0) - (a.Fecha ? new Date(a.Fecha).getTime() : 0);
-    });
-
-    return {
-      params: { category },
-      props: { category, albums: processedAlbums }
-    };
-  });
+if (pathname.includes('/compilations')) {
+  category = 'compilations';
+  pageTitle = "Compilations";
+} else if (pathname.includes('/playlists')) {
+  category = 'playlists';
+  pageTitle = "Playlists";
+} else if (pathname.includes('/artist-compilations')) {
+  category = 'artist-compilations';
+  pageTitle = "Artist Compilations";
 }
 
-const { category, albums } = Astro.props;
+// 2. Parsear y filtrar datos del CSV
+const parsedData = Papa.parse(csvRaw, { header: true, skipEmptyLines: true });
+const rawAlbums = parsedData.data || [];
+
+let validAlbums = rawAlbums.filter(a => a && a.Title && a.Status === "PUBLISHED");
+
+if (category === 'compilations') {
+  validAlbums = validAlbums.filter(a => a.Categoría === 'Compilation');
+} else if (category === 'playlists') {
+  validAlbums = validAlbums.filter(a => a.Categoría === 'Playlist');
+} else if (category === 'artist-compilations') {
+  validAlbums = validAlbums.filter(a => a.Categoría === 'Artist');
+}
+
+const processedAlbums = validAlbums.map(a => ({
+  ...a,
+  slug: a.Title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-')
+})).filter((a, i, s) => i === s.findIndex((t) => t.Title === a.Title))
+.sort((a, b) => {
+  return (b.Fecha ? new Date(b.Fecha).getTime() : 0) - (a.Fecha ? new Date(a.Fecha).getTime() : 0);
+});
 
 function obtenerUrlWix(wixString) {
   if (!wixString || !wixString.startsWith('wix:image')) return wixString;
@@ -51,13 +55,7 @@ function getDetailUrl(album) {
   return `/${album.slug}`;
 }
 
-let pageTitle = "All Albums";
-if (category === 'compilations') pageTitle = "Compilations";
-else if (category === 'playlists') pageTitle = "Playlists";
-else if (category === 'artist-compilations') pageTitle = "Artist Compilations";
-
-const safeAlbums = albums || [];
-
+const safeAlbums = processedAlbums || [];
 const albumsPorAno = safeAlbums.reduce((acc, album) => {
   let anoCrudo = album.Año && album.Año.trim() !== "" ? album.Año.trim() : (album.Fecha ? new Date(album.Fecha).getFullYear().toString() : 'Other');
   const ano = anoCrudo.replace(/[\[\]"]/g, '').trim();
@@ -102,7 +100,7 @@ const anosOrdenados = Object.keys(albumsPorAno).sort((a, b) => {
 
 <style is:global>
   .catalog-container {
-    max-width: 950px; /* <--- Igual que en index.astro */
+    max-width: 950px;
     margin: 10px auto 10px auto !important;
     padding: 0 20px;
     font-family: 'Work Sans', sans-serif;
@@ -138,9 +136,9 @@ const anosOrdenados = Object.keys(albumsPorAno).sort((a, b) => {
  .albums-flex-grid {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center; /* Centra perfectamente cualquier fila incompleta */
+    justify-content: center;
     gap: 25px;
-    max-width: 950px; /* Exactamente el mismo ancho máximo que el index.astro */
+    max-width: 950px;
     margin: 0 auto;
   }
 
@@ -149,7 +147,6 @@ const anosOrdenados = Object.keys(albumsPorAno).sort((a, b) => {
     color: inherit;
     display: block;
     text-align: center;
-    /* Calculamos exactamente el ancho para que quepan 4 por fila con un gap de 25px: (950 - (3 * 25)) / 4 = 218.75px */
     width: 218px; 
   }
 
@@ -175,29 +172,23 @@ const anosOrdenados = Object.keys(albumsPorAno).sort((a, b) => {
     transform: scale(1.03);
   }
 
-  /* 📱 ADAPTABILIDAD MÓVIL: 2 Portadas por línea */
   @media (max-width: 768px) {
     .catalog-container {
       padding: 0 10px;
     }
-
     .page-title {
       font-size: 44px !important;
       margin-bottom: 20px !important;
     }
-
     .year-title {
       font-size: 22px !important;
       margin-bottom: 12px !important;
     }
-
-    .albums-flex-grid, 
-    .albums-flex-grid.grid-5-cols-mode {
+    .albums-flex-grid {
       gap: 12px 10px;
     }
-
     .album-card {
-      width: 48% !important; /* Cambiado a 48% para que entren exactamente 2 por fila */
+      width: 48% !important;
       max-width: none;
     }
   }
