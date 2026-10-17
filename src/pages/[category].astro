@@ -102,9 +102,9 @@ const anosOrdenados = Object.keys(albumsPorAno).sort((a, b) => {
   </div>
 </Layout>
 
-<style is:global>
+<style is:inline>
   .catalog-container {
-    max-width: 950px; /* <--- Igual que en index.astro */
+    max-width: 950px;
     margin: 10px auto 10px auto !important;
     padding: 0 20px;
     font-family: 'Work Sans', sans-serif;
@@ -137,12 +137,12 @@ const anosOrdenados = Object.keys(albumsPorAno).sort((a, b) => {
     border: none !important;
   }
 
- .albums-flex-grid {
+  .albums-flex-grid {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center; /* Centra perfectamente cualquier fila incompleta */
+    justify-content: center;
     gap: 25px;
-    max-width: 950px; /* Exactamente el mismo ancho máximo que el index.astro */
+    max-width: 950px;
     margin: 0 auto;
   }
 
@@ -151,7 +151,6 @@ const anosOrdenados = Object.keys(albumsPorAno).sort((a, b) => {
     color: inherit;
     display: block;
     text-align: center;
-    /* Calculamos exactamente el ancho para que quepan 4 por fila con un gap de 25px: (950 - (3 * 25)) / 4 = 218.75px */
     width: 218px; 
   }
 
@@ -193,14 +192,16 @@ const anosOrdenados = Object.keys(albumsPorAno).sort((a, b) => {
       margin-bottom: 12px !important;
     }
 
-    .albums-flex-grid, 
-    .albums-flex-grid.grid-5-cols-mode {
-      gap: 12px 10px;
+    .albums-flex-grid {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      justify-content: center !important;
+      gap: 12px 10px !important;
     }
 
     .album-card {
-      width: 48% !important; /* Cambiado a 48% para que entren exactamente 2 por fila */
-      max-width: none;
+      width: 48% !important;
+      max-width: none !important;
     }
   }
 </style>
