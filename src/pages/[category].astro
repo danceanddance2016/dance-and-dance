@@ -3,6 +3,9 @@ import Layout from '../layouts/Layout.astro';
 import Papa from 'papaparse';
 import csvRaw from '../data/Dance&Dance.csv?raw';
 
+// 🌟 AGREGA ESTA LÍNEA JUSTO AQUÍ ABAJO:
+export const prerender = true;
+
 export async function getStaticPaths() {
   const parsedData = Papa.parse(csvRaw, { header: true, skipEmptyLines: true });
   const rawAlbums = parsedData.data;
