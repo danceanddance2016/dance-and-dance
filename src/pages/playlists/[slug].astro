@@ -3,37 +3,40 @@ import Layout from '../../layouts/Layout.astro';
 import Papa from 'papaparse';
 import csvRaw from '../../data/Dance&Dance.csv?raw';
 
-export async function getStaticPaths() {
-  const parsedData = Papa.parse(csvRaw, { header: true, skipEmptyLines: true });
-  const rawAlbums = parsedData.data;
+// 1. Obtenemos el slug de la URL actual
+const { slug } = Astro.params;
 
-  const valid = rawAlbums.filter(a => a && a.Title && a.Status === "PUBLISHED");
-  const sorted = valid.map(a => ({
-    ...a,
-    slug: a.Title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-')
-  })).filter((a, i, s) => i === s.findIndex((t) => t.Title === a.Title)).sort((a, b) => {
-    return (b.Fecha ? new Date(b.Fecha).getTime() : 0) - (a.Fecha ? new Date(a.Fecha).getTime() : 0);
-  });
+// 2. Parseamos el CSV
+const parsedData = Papa.parse(csvRaw, { header: true, skipEmptyLines: true });
+const rawAlbums = parsedData.data;
 
-  function getAlbumUrl(album) {
-    if (!album) return null;
-    if (album.Categoría === 'Compilation') return `/compilations/${album.slug}`;
-    if (album.Categoría === 'Playlist') return `/playlists/${album.slug}`;
-    if (album.Categoría === 'Artist') return `/artist-compilations/${album.slug}`;
-    return `/${album.slug}`;
-  }
+const valid = rawAlbums.filter(a => a && a.Title && a.Status === "PUBLISHED");
+const sorted = valid.map(a => ({
+  ...a,
+  slug: a.Title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-')
+})).filter((a, i, s) => i === s.findIndex((t) => t.Title === a.Title)).sort((a, b) => {
+  return (b.Fecha ? new Date(b.Fecha).getTime() : 0) - (a.Fecha ? new Date(a.Fecha).getTime() : 0);
+});
 
-  return sorted.map((album, index) => ({
-    params: { slug: album.slug },
-    props: { 
-      album,
-      newerSlug: index > 0 ? getAlbumUrl(sorted[index - 1]) : null,
-      olderSlug: index < sorted.length - 1 ? getAlbumUrl(sorted[index + 1]) : null
-    }
-  }));
+// 3. Encontramos el álbum actual y la posición para las flechas de navegación (anterior y siguiente)
+const currentIndex = sorted.findIndex(a => a.slug === slug);
+const album = sorted[currentIndex];
+
+// Si no se encuentra el álbum, puedes redirigir o mostrar un 404
+if (!album) {
+  return Astro.redirect('/404');
 }
 
-const { album, newerSlug, olderSlug } = Astro.props;
+function getAlbumUrl(item) {
+  if (!item) return null;
+  if (item.Categoría === 'Compilation') return `/compilations/${item.slug}`;
+  if (item.Categoría === 'Playlist') return `/playlists/${item.slug}`;
+  if (item.Categoría === 'Artist') return `/artist-compilations/${item.slug}`;
+  return `/${item.slug}`;
+}
+
+const newerSlug = currentIndex > 0 ? getAlbumUrl(sorted[currentIndex - 1]) : null;
+const olderSlug = currentIndex < sorted.length - 1 ? getAlbumUrl(sorted[currentIndex + 1]) : null;
 
 function obtenerUrlWix(wixString) {
   if (!wixString || !wixString.startsWith('wix:image')) return wixString;
@@ -240,7 +243,7 @@ if (album.Categoría === 'Compilation') {
     color: #cccccc;
     margin-bottom: 12px;
     line-height: 1.2;
-    text-align: center; /* Centrado universal para PC y Móvil */
+    text-align: center;
     max-width: 380px;
   }
 
@@ -322,7 +325,6 @@ if (album.Categoría === 'Compilation') {
     line-height: 1.4em !important;
   }
 
-  /* 📱 ADAPTABILIDAD MÓVIL OPTIMIZADA SIN ESPACIOS */
   @media (max-width: 768px) {
     .detail-container {
       padding: 0 10px;
@@ -339,7 +341,7 @@ if (album.Categoría === 'Compilation') {
       width: 100%;
       display: flex;
       flex-direction: column;
-      align-items: center; /* Centra todo el bloque de texto y botones en móvil */
+      align-items: center;
       text-align: center;
     }
 
@@ -353,12 +355,12 @@ if (album.Categoría === 'Compilation') {
 
     .detail-image-col {
       width: 100%;
-      order: -1; /* Mantiene la portada arriba */
+      order: -1;
       margin-bottom: 0;
     }
 
     .image-box-wrapper {
-      width: 260px !important; /* Ancho fluido adaptado a pantalla pequeña */
+      width: 260px !important;
     }
 
     .album-detail-img {
