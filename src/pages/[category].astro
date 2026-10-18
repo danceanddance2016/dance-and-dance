@@ -3,42 +3,30 @@ import Layout from '../layouts/Layout.astro';
 import Papa from 'papaparse';
 import csvRaw from '../data/Dance&Dance.csv?raw';
 
-// 🌟 AGREGA ESTA LÍNEA JUSTO AQUÍ ABAJO:
-export const prerender = true;
+// 1. Obtenemos la categoría directamente de la URL en modo SSR
+const { category } = Astro.params;
 
-export async function getStaticPaths() {
-  const parsedData = Papa.parse(csvRaw, { header: true, skipEmptyLines: true });
-  const rawAlbums = parsedData.data;
+// 2. Parseamos y procesamos el CSV en cada petición del servidor
+const parsedData = Papa.parse(csvRaw, { header: true, skipEmptyLines: true });
+const rawAlbums = parsedData.data;
 
-  const categories = ['compilations', 'playlists', 'artist-compilations', 'all-albums'];
+let validAlbums = rawAlbums.filter(a => a && a.Title && a.Status === "PUBLISHED");
 
-  return categories.map(category => {
-    let validAlbums = rawAlbums.filter(a => a && a.Title && a.Status === "PUBLISHED");
-    
-    if (category === 'compilations') {
-      validAlbums = validAlbums.filter(a => a.Categoría === 'Compilation');
-    } else if (category === 'playlists') {
-      validAlbums = validAlbums.filter(a => a.Categoría === 'Playlist');
-    } else if (category === 'artist-compilations') {
-      validAlbums = validAlbums.filter(a => a.Categoría === 'Artist');
-    }
-
-    const processedAlbums = validAlbums.map(a => ({
-      ...a,
-      slug: a.Title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-')
-    })).filter((a, i, s) => i === s.findIndex((t) => t.Title === a.Title))
-    .sort((a, b) => {
-      return (b.Fecha ? new Date(b.Fecha).getTime() : 0) - (a.Fecha ? new Date(a.Fecha).getTime() : 0);
-    });
-
-    return {
-      params: { category },
-      props: { category, albums: processedAlbums }
-    };
-  });
+if (category === 'compilations') {
+  validAlbums = validAlbums.filter(a => a.Categoría === 'Compilation');
+} else if (category === 'playlists') {
+  validAlbums = validAlbums.filter(a => a.Categoría === 'Playlist');
+} else if (category === 'artist-compilations') {
+  validAlbums = validAlbums.filter(a => a.Categoría === 'Artist');
 }
 
-const { category, albums } = Astro.props;
+const albums = validAlbums.map(a => ({
+  ...a,
+  slug: a.Title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-')
+})).filter((a, i, s) => i === s.findIndex((t) => t.Title === a.Title))
+.sort((a, b) => {
+  return (b.Fecha ? new Date(b.Fecha).getTime() : 0) - (a.Fecha ? new Date(a.Fecha).getTime() : 0);
+});
 
 function obtenerUrlWix(wixString) {
   if (!wixString || !wixString.startsWith('wix:image')) return wixString;
@@ -72,15 +60,14 @@ const albumsPorAno = albums.reduce((acc, album) => {
 
 const anosOrdenados = Object.keys(albumsPorAno).sort((a, b) => {
   if (a === 'Other') return 1;
-  if (b === 'Other') return -1;
+  if (a === 'Other') return -1;
   return Number(b) - Number(a);
 });
 ---
 
-<Layout title={`${pageTitle}`}>
 <Layout title={`${pageTitle} | Dance & Dance`}>
   <div class="catalog-container">
-
+    
     <h1 class="page-title">{pageTitle}</h1>
 
     {anosOrdenados.map(ano => (
@@ -102,9 +89,9 @@ const anosOrdenados = Object.keys(albumsPorAno).sort((a, b) => {
   </div>
 </Layout>
 
-<style is:inline>
+<style is:global>
   .catalog-container {
-    max-width: 950px;
+    max-width: 950px; /* <--- Igual que en index.astro */
     margin: 10px auto 10px auto !important;
     padding: 0 20px;
     font-family: 'Work Sans', sans-serif;
@@ -137,12 +124,12 @@ const anosOrdenados = Object.keys(albumsPorAno).sort((a, b) => {
     border: none !important;
   }
 
-  .albums-flex-grid {
+ .albums-flex-grid {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
+    justify-content: center; /* Centra perfectamente cualquier fila incompleta */
     gap: 25px;
-    max-width: 950px;
+    max-width: 950px; /* Exactamente el mismo ancho máximo que el index.astro */
     margin: 0 auto;
   }
 
@@ -151,6 +138,7 @@ const anosOrdenados = Object.keys(albumsPorAno).sort((a, b) => {
     color: inherit;
     display: block;
     text-align: center;
+    /* Calculamos exactamente el ancho para que quepan 4 por fila con un gap de 25px: (950 - (3 * 25)) / 4 = 218.75px */
     width: 218px; 
   }
 
@@ -192,16 +180,14 @@ const anosOrdenados = Object.keys(albumsPorAno).sort((a, b) => {
       margin-bottom: 12px !important;
     }
 
-    .albums-flex-grid {
-      display: flex !important;
-      flex-wrap: wrap !important;
-      justify-content: center !important;
-      gap: 12px 10px !important;
+    .albums-flex-grid, 
+    .albums-flex-grid.grid-5-cols-mode {
+      gap: 12px 10px;
     }
 
     .album-card {
-      width: 48% !important;
-      max-width: none !important;
+      width: 48% !important; /* Cambiado a 48% para que entren exactamente 2 por fila */
+      max-width: none;
     }
   }
 </style>
