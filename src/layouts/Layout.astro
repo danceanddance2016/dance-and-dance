@@ -10,7 +10,6 @@ const { title } = Astro.props;
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<link rel="icon" type="image/png" href="/favicon.png" />
 
-		
 		<!-- Carga completa y real de Work Sans -->
 		<link rel="preconnect" href="https://fonts.googleapis.com">
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,19 +19,29 @@ const { title } = Astro.props;
 	</head>
 	<body>
 
-		<!-- CABECERA INTELIGENTE (Se oculta al bajar en móvil y reaparece al subir) -->
-		<header id="main-header" style="display: flex; flex-direction: column; align-items: center; padding: 12px 20px 8px 20px; background-color: #ffffff; position: sticky; top: 0; z-index: 1000; transition: transform 0.3s ease-in-out;">
-			<div style="margin-bottom: 0px; text-align: center; width: 100%;">
+		<!-- CABECERA INTELIGENTE -->
+		<header id="main-header">
+			<div class="logo-container">
 				<a href="/">
 					<img 
 						src="/Banner-Superior-DD.png" 
 						alt="Dance & Dance - Banner Superior" 
-						style="max-width: 550px; width: 100%; height: auto; display: block; margin: 0 auto;" 
+						class="header-banner"
 					/>
 				</a>
 			</div>
-			<nav class="main-nav">
+
+			<!-- BOTÓN HAMBURGUESA (Solo visible en móviles) -->
+			<button id="menu-toggle" class="menu-toggle" aria-label="Abrir menú">
+				<span class="bar"></span>
+				<span class="bar"></span>
+				<span class="bar"></span>
+			</button>
+
+			<!-- MENÚ DE NAVEGACIÓN -->
+			<nav id="main-nav" class="main-nav">
 				<a href="/" style="color: #000000;">Home</a>
+				<a href="/news" style="color: #000000;">News</a>
 				<a href="/compilations" style="color: #000000;">Compilations</a>
 				<a href="/playlists" style="color: #000000;">Playlists</a>
 				<a href="/artist-compilations" style="color: #000000;">Artist Compilations</a>
@@ -46,7 +55,7 @@ const { title } = Astro.props;
 			<slot />
 		</main>
 
-		<!-- BOTÓN FLOTANTE "VOLVER ARRIBA" (PC y Móvil) -->
+		<!-- BOTÓN FLOTANTE "VOLVER ARRIBA" -->
 		<button id="scroll-to-top" aria-label="Volver arriba" title="Volver arriba">
 			&#8593;
 		</button>
@@ -54,7 +63,6 @@ const { title } = Astro.props;
 		<!-- PIE DE PÁGINA -->
 		<footer class="main-footer">
 			<div class="footer-content">
-				
 				<div class="footer-col-left">
 					<p style="margin: 0 0 8px 0;">
 						<img src="/D&D-Logo.png" alt="Dance & Dance Logo" style="max-width: 110px; width: 100%; height: auto; display: block;" />
@@ -98,7 +106,6 @@ const { title } = Astro.props;
 						</a>
 					</div>
 				</div>
-
 			</div>
 		</footer>
 
@@ -106,45 +113,57 @@ const { title } = Astro.props;
 		<script>
 			let lastScrollTop = 0;
 			const header = document.getElementById('main-header');
+			const nav = document.getElementById('main-nav');
+			const menuToggle = document.getElementById('menu-toggle');
 			const scrollTopBtn = document.getElementById('scroll-to-top');
 			const scrollThreshold = 50;
 			let scrollTimeout;
+
+			// Lógica Menú Hamburguesa en Móvil
+			menuToggle?.addEventListener('click', () => {
+				nav?.classList.toggle('active');
+				menuToggle.classList.toggle('open');
+			});
+
+			// Ocultar menú desplegado al hacer clic en un enlace
+			nav?.querySelectorAll('a').forEach(link => {
+				link.addEventListener('click', () => {
+					nav.classList.remove('active');
+					menuToggle?.classList.remove('open');
+				});
+			});
 
 			window.addEventListener('scroll', function() {
 				let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
 
 				// 1. Ocultar/Mostrar Header en Móvil
 				if (window.innerWidth <= 768) {
-					if (scrollTop > lastScrollTop && scrollTop > scrollThreshold) {
-						header.style.transform = 'translateY(-100%)';
-					} else {
-						header.style.transform = 'translateY(0)';
+					// Si el menú está abierto, no ocultamos la cabecera al hacer scroll
+					if (!nav?.classList.contains('active')) {
+						if (scrollTop > lastScrollTop && scrollTop > scrollThreshold) {
+							header.style.transform = 'translateY(-100%)';
+						} else {
+							header.style.transform = 'translateY(0)';
+						}
 					}
 					lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
 				} else {
 					header.style.transform = 'translateY(0)';
 				}
 
-				// 2. Lógica del botón "Volver Arriba" con inactividad
+				// 2. Lógica del botón "Volver Arriba"
 				if (scrollTop > 20) {
-					// Mostramos la flecha al mover la pantalla
 					scrollTopBtn.classList.add('visible');
-
-					// Limpiamos el temporizador anterior para que no se apague antes de tiempo
 					clearTimeout(scrollTimeout);
-
-					// Programamos que se oculte tras 2 segundos (2000 milisegundos) de inactividad
 					scrollTimeout = setTimeout(() => {
 						scrollTopBtn.classList.remove('visible');
 					}, 2000);
 				} else {
-					// Si estamos arriba del todo, se oculta inmediatamente
 					scrollTopBtn.classList.remove('visible');
 					clearTimeout(scrollTimeout);
 				}
 			});
 
-			// Evento de clic para subir suavemente
 			scrollTopBtn?.addEventListener('click', function() {
 				window.scrollTo({
 					top: 0,
@@ -171,7 +190,34 @@ const { title } = Astro.props;
 		border: none !important;
 	}
 
-	/* Estilos del Menú de Navegación */
+	/* Header */
+	#main-header {
+		display: flex; 
+		flex-direction: column; 
+		align-items: center; 
+		padding: 12px 20px 8px 20px; 
+		background-color: #ffffff; 
+		position: sticky; 
+		top: 0; 
+		z-index: 1000; 
+		transition: transform 0.3s ease-in-out;
+	}
+
+	.logo-container {
+		margin-bottom: 0px; 
+		text-align: center; 
+		width: 100%;
+	}
+
+	.header-banner {
+		max-width: 550px; 
+		width: 100%; 
+		height: auto; 
+		display: block; 
+		margin: 0 auto;
+	}
+
+	/* Estilos del Menú de Navegación (PC) */
 	.main-nav {
 		display: flex;
 		justify-content: center;
@@ -181,16 +227,46 @@ const { title } = Astro.props;
 		font-size: 18px;
 		font-weight: normal;
 		font-style: italic;
-		border-top: none;
-		border-bottom: none;
 		width: 80%;
 		max-width: 900px;
 		padding: 4px 0 1px 0;
 	}
 
-	/* ----------------------------------------------------
-	   BOTÓN FLOTANTE VOLVER ARRIBA (Con desvanecimiento)
-	   ---------------------------------------------------- */
+	/* Botón Hamburguesa (Oculto en PC) */
+	.menu-toggle {
+		display: none;
+		flex-direction: column;
+		justify-content: space-between;
+		width: 30px;
+		height: 21px;
+		background: transparent;
+		border: none;
+		cursor: pointer;
+		padding: 0;
+		margin-top: 10px;
+		z-index: 1001;
+	}
+
+	.menu-toggle .bar {
+		width: 100%;
+		height: 3px;
+		background-color: #000000;
+		border-radius: 2px;
+		transition: all 0.3s ease;
+	}
+
+	/* Transformación a 'X' al abrir */
+	.menu-toggle.open .bar:nth-child(1) {
+		transform: translateY(9px) rotate(45deg);
+	}
+	.menu-toggle.open .bar:nth-child(2) {
+		opacity: 0;
+	}
+	.menu-toggle.open .bar:nth-child(3) {
+		transform: translateY(-9px) rotate(-45deg);
+	}
+
+	/* BOTÓN FLOTANTE VOLVER ARRIBA */
 	#scroll-to-top {
 		position: fixed;
 		bottom: 25px;
@@ -228,7 +304,7 @@ const { title } = Astro.props;
 		transform: scale(0.95);
 	}
 
-	/* Estilos adaptativos del Footer Compacto */
+	/* Footer */
 	.main-footer {
 		margin-top: 5px;
 		padding: 10px 20px 12px 20px;
@@ -287,10 +363,25 @@ const { title } = Astro.props;
 
 	/* 📱 ADAPTABILIDAD MÓVIL */
 	@media (max-width: 768px) {
+		.menu-toggle {
+			display: flex; /* Se muestra la hamburguesa */
+		}
+
 		.main-nav {
-			gap: 12px 18px;
-			font-size: 16px;
+			display: none; /* Se oculta la barra en horizontal */
+			flex-direction: column;
+			align-items: center;
 			width: 100%;
+			padding: 15px 0;
+			gap: 15px;
+			font-size: 18px;
+			background-color: #ffffff;
+			border-bottom: 1px solid #eeeeee;
+		}
+
+		/* Se despliega en vertical cuando se pulsa el botón */
+		.main-nav.active {
+			display: flex;
 		}
 
 		#scroll-to-top {
