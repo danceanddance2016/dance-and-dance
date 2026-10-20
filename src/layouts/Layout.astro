@@ -21,22 +21,24 @@ const { title } = Astro.props;
 
 		<!-- CABECERA INTELIGENTE -->
 		<header id="main-header">
-			<div class="logo-container">
-				<a href="/">
-					<img 
-						src="/Banner-Superior-DD.png" 
-						alt="Dance & Dance - Banner Superior" 
-						class="header-banner"
-					/>
-				</a>
-			</div>
+			<div class="header-top-row">
+				<div class="logo-container">
+					<a href="/">
+						<img 
+							src="/Banner-Superior-DD.png" 
+							alt="Dance & Dance - Banner Superior" 
+							class="header-banner"
+						/>
+					</a>
+				</div>
 
-			<!-- BOTÓN HAMBURGUESA (Solo visible en móviles) -->
-			<button id="menu-toggle" class="menu-toggle" aria-label="Abrir menú">
-				<span class="bar"></span>
-				<span class="bar"></span>
-				<span class="bar"></span>
-			</button>
+				<!-- BOTÓN HAMBURGUESA (A la derecha en móviles) -->
+				<button id="menu-toggle" class="menu-toggle" aria-label="Abrir menú">
+					<span class="bar"></span>
+					<span class="bar"></span>
+					<span class="bar"></span>
+				</button>
+			</div>
 
 			<!-- MENÚ DE NAVEGACIÓN -->
 			<nav id="main-nav" class="main-nav">
@@ -46,8 +48,8 @@ const { title } = Astro.props;
 				<a href="/artist-compilations" style="color: #000000;">Artist Compilations</a>
 				<a href="/all-albums" style="color: #000000;">All Albums</a>
 				<a href="/more-playlists" style="color: #000000;">+ Playlists</a>
-				<a href="https://dance-anddance.blogspot.com/" target="_blank" rel="noopener noreferrer" style="color: #000000;">News</a>
-			 </nav>
+				<a href="/news" style="color: #000000;">News</a>
+			</nav>
 		</header>
 
 		<!-- CONTENIDO PRINCIPAL -->
@@ -109,36 +111,56 @@ const { title } = Astro.props;
 			</div>
 		</footer>
 
-		<!-- SCRIPTS INTELIGENTES -->
+		<!-- SCRIPTS INTELIGENTES GLOBALES -->
 		<script>
 			let lastScrollTop = 0;
-			const header = document.getElementById('main-header');
-			const nav = document.getElementById('main-nav');
-			const menuToggle = document.getElementById('menu-toggle');
-			const scrollTopBtn = document.getElementById('scroll-to-top');
 			const scrollThreshold = 50;
-			let scrollTimeout;
+			let scrollTimeout: any;
 
-			// Lógica Menú Hamburguesa en Móvil
-			menuToggle?.addEventListener('click', () => {
-				nav?.classList.toggle('active');
-				menuToggle.classList.toggle('open');
-			});
+			function initDanceHeader() {
+				const header = document.getElementById('main-header');
+				const nav = document.getElementById('main-nav');
+				const menuToggle = document.getElementById('menu-toggle');
+				const scrollTopBtn = document.getElementById('scroll-to-top');
 
-			// Ocultar menú desplegado al hacer clic en un enlace
-			nav?.querySelectorAll('a').forEach(link => {
-				link.addEventListener('click', () => {
-					nav.classList.remove('active');
-					menuToggle?.classList.remove('open');
-				});
-			});
+				// 1. Lógica Menú Hamburguesa en Móvil
+				if (menuToggle && nav) {
+					menuToggle.onclick = (e) => {
+						e.stopPropagation();
+						nav.classList.toggle('active');
+						menuToggle.classList.toggle('open');
+					};
 
-			window.addEventListener('scroll', function() {
+					nav.querySelectorAll('a').forEach(link => {
+						link.onclick = () => {
+							nav.classList.remove('active');
+							menuToggle.classList.remove('open');
+						};
+					});
+				}
+
+				// 2. Acción del botón "Volver Arriba"
+				if (scrollTopBtn) {
+					scrollTopBtn.onclick = () => {
+						window.scrollTo({
+							top: 0,
+							behavior: 'smooth'
+						});
+						scrollTopBtn.classList.remove('visible');
+						clearTimeout(scrollTimeout);
+					};
+				}
+			}
+
+			// 3. Listener Global del Scroll para la cabecera y el botón de subir
+			window.addEventListener('scroll', () => {
+				const header = document.getElementById('main-header');
+				const nav = document.getElementById('main-nav');
+				const scrollTopBtn = document.getElementById('scroll-to-top');
 				let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
 
-				// 1. Ocultar/Mostrar Header en Móvil
-				if (window.innerWidth <= 768) {
-					// Si el menú está abierto, no ocultamos la cabecera al hacer scroll
+				// Ocultar/Mostrar Header en Móvil
+				if (window.innerWidth <= 768 && header) {
 					if (!nav?.classList.contains('active')) {
 						if (scrollTop > lastScrollTop && scrollTop > scrollThreshold) {
 							header.style.transform = 'translateY(-100%)';
@@ -147,31 +169,34 @@ const { title } = Astro.props;
 						}
 					}
 					lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
-				} else {
+				} else if (header) {
 					header.style.transform = 'translateY(0)';
 				}
 
-				// 2. Lógica del botón "Volver Arriba"
-				if (scrollTop > 20) {
-					scrollTopBtn.classList.add('visible');
-					clearTimeout(scrollTimeout);
-					scrollTimeout = setTimeout(() => {
+				// Lógica de visibilidad del botón "Volver Arriba"
+				if (scrollTopBtn) {
+					if (scrollTop > 20) {
+						scrollTopBtn.classList.add('visible');
+						clearTimeout(scrollTimeout);
+						scrollTimeout = setTimeout(() => {
+							scrollTopBtn.classList.remove('visible');
+						}, 2000);
+					} else {
 						scrollTopBtn.classList.remove('visible');
-					}, 2000);
-				} else {
-					scrollTopBtn.classList.remove('visible');
-					clearTimeout(scrollTimeout);
+						clearTimeout(scrollTimeout);
+					}
 				}
 			});
 
-			scrollTopBtn?.addEventListener('click', function() {
-				window.scrollTo({
-					top: 0,
-					behavior: 'smooth'
-				});
-				scrollTopBtn.classList.remove('visible');
-				clearTimeout(scrollTimeout);
-			});
+			// Inicializar al cargar la página
+			if (document.readyState === 'loading') {
+				document.addEventListener('DOMContentLoaded', initDanceHeader);
+			} else {
+				initDanceHeader();
+			}
+
+			// Soporte para transiciones de Astro
+			document.addEventListener('astro:page-load', initDanceHeader);
 		</script>
 
 	</body>
@@ -181,7 +206,7 @@ const { title } = Astro.props;
 	html, body {
 		margin: 0;
 		padding: 0;
-		background-color: #ffffff; 
+		background-color: #ffffff;
 		color: #333333;
 		font-family: 'Work Sans', sans-serif;
 	}
@@ -192,28 +217,34 @@ const { title } = Astro.props;
 
 	/* Header */
 	#main-header {
-		display: flex; 
-		flex-direction: column; 
-		align-items: center; 
-		padding: 12px 20px 8px 20px; 
-		background-color: #ffffff; 
-		position: sticky; 
-		top: 0; 
-		z-index: 1000; 
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding: 12px 20px 8px 20px;
+		background-color: #ffffff;
+		position: sticky;
+		top: 0;
+		z-index: 1000;
 		transition: transform 0.3s ease-in-out;
 	}
 
+	.header-top-row {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 100%;
+	}
+
 	.logo-container {
-		margin-bottom: 0px; 
-		text-align: center; 
+		text-align: center;
 		width: 100%;
 	}
 
 	.header-banner {
-		max-width: 550px; 
-		width: 100%; 
-		height: auto; 
-		display: block; 
+		max-width: 550px;
+		width: 100%;
+		height: auto;
+		display: block;
 		margin: 0 auto;
 	}
 
@@ -237,14 +268,14 @@ const { title } = Astro.props;
 		display: none;
 		flex-direction: column;
 		justify-content: space-between;
-		width: 30px;
-		height: 21px;
+		width: 28px;
+		height: 20px;
 		background: transparent;
 		border: none;
 		cursor: pointer;
 		padding: 0;
-		margin-top: 10px;
 		z-index: 1001;
+		flex-shrink: 0;
 	}
 
 	.menu-toggle .bar {
@@ -257,13 +288,13 @@ const { title } = Astro.props;
 
 	/* Transformación a 'X' al abrir */
 	.menu-toggle.open .bar:nth-child(1) {
-		transform: translateY(9px) rotate(45deg);
+		transform: translateY(8.5px) rotate(45deg);
 	}
 	.menu-toggle.open .bar:nth-child(2) {
 		opacity: 0;
 	}
 	.menu-toggle.open .bar:nth-child(3) {
-		transform: translateY(-9px) rotate(-45deg);
+		transform: translateY(-8.5px) rotate(-45deg);
 	}
 
 	/* BOTÓN FLOTANTE VOLVER ARRIBA */
@@ -363,12 +394,35 @@ const { title } = Astro.props;
 
 	/* 📱 ADAPTABILIDAD MÓVIL */
 	@media (max-width: 768px) {
+		#main-header {
+			padding: 8px 15px 8px 15px;
+		}
+
+		.header-top-row {
+			justify-content: space-between;
+			gap: 10px;
+			position: relative;
+		}
+
+		.logo-container {
+			flex: 1;
+			display: flex;
+			justify-content: center;
+			padding-left: 0;
+			text-align: center;
+		}
+
+		.header-banner {
+			max-width: 250px;
+			margin: 0;
+		}
+
 		.menu-toggle {
-			display: flex; /* Se muestra la hamburguesa */
+			display: flex;
 		}
 
 		.main-nav {
-			display: none; /* Se oculta la barra en horizontal */
+			display: none;
 			flex-direction: column;
 			align-items: center;
 			width: 100%;
@@ -379,7 +433,6 @@ const { title } = Astro.props;
 			border-bottom: 1px solid #eeeeee;
 		}
 
-		/* Se despliega en vertical cuando se pulsa el botón */
 		.main-nav.active {
 			display: flex;
 		}
