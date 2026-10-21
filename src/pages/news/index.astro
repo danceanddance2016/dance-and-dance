@@ -110,6 +110,15 @@ const posts = entries.map((entry: any) => {
     overflow-wrap: break-word; /* Prevents long URLs from expanding the width */
   }
 
+  /* Control de párrafos de Blogger: separa cada frase/párrafo con un respiro perfecto */
+  .post-content :global(p) {
+    margin: 0 0 12px 0;
+  }
+
+  .post-content :global(p:last-child) {
+    margin-bottom: 0;
+  }
+
   /* Estilos específicos para las etiquetas traídas dinámicamente de Blogger */
   .post-content :global(img) {
     max-width: 100%;
@@ -123,8 +132,8 @@ const posts = entries.map((entry: any) => {
     text-decoration: underline !important;
   }
 
-  .post-content :global(p:empty),
-  .post-content :global(br) {
+  /* Ocultamos solo bloques realmente vacíos, dejando intactos los saltos de línea necesarios */
+  .post-content :global(p:empty) {
     display: none;
   }
 
