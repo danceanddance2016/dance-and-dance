@@ -15,7 +15,10 @@ const sorted = valid.map(a => ({
   ...a,
   slug: a.Title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-')
 })).filter((a, i, s) => i === s.findIndex((t) => t.Title === a.Title)).sort((a, b) => {
-  return (b.Fecha ? new Date(b.Fecha).getTime() : 0) - (a.Fecha ? new Date(a.Fecha).getTime() : 0);
+  const dateA = a.Fecha ? new Date(a.Fecha).getTime() : 0;
+  const dateB = b.Fecha ? new Date(b.Fecha).getTime() : 0;
+  if (dateB !== dateA) return dateB - dateA;
+  return a.Title.localeCompare(b.Title);
 });
 
 // 3. Encontramos el álbum actual y la posición para las flechas de navegación (anterior y siguiente)
