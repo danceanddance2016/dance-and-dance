@@ -6,6 +6,19 @@ import csvRaw from '../data/Dance&Dance.csv?raw';
 // 1. Obtenemos la categoría directamente de la URL en modo SSR
 const { category } = Astro.params;
 
+// Función slugify robusta y universal para tildes y eñes
+function slugify(text) {
+  if (!text) return "";
+  return text
+    .toLowerCase()
+    .replace(/ñ/g, "n")              // Cambia ñ por n
+    .normalize("NFD")               // Separa las tildes de las letras
+    .replace(/[\u0300-\u036f]/g, "") // Elimina las tildes limpiamente
+    .replace(/[^a-z0-9 -]/g, "")     // Quita símbolos extraños
+    .replace(/\s+/g, "-")            // Cambia espacios por guiones
+    .replace(/-+/g, "-");            // Evita guiones dobles
+}
+
 // 2. Parseamos y procesamos el CSV en cada petición del servidor
 const parsedData = Papa.parse(csvRaw, { header: true, skipEmptyLines: true });
 const rawAlbums = parsedData.data;
@@ -22,13 +35,13 @@ if (category === 'compilations') {
 
 const albums = validAlbums.map(a => ({
   ...a,
-  slug: a.Title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-')
+  slug: slugify(a.Title) // <--- Usando la función robusta con tildes y eñes
 })).filter((a, i, s) => i === s.findIndex((t) => t.Title === a.Title))
 .sort((a, b) => {
   const dateA = a.Fecha ? new Date(a.Fecha).getTime() : 0;
   const dateB = b.Fecha ? new Date(b.Fecha).getTime() : 0;
   if (dateB !== dateA) return dateB - dateA;
-  return a.Title.localeCompare(b.Title); // Orden alfabético si la fecha es idéntica
+  return a.Title.localeCompare(b.Title);
 });
 
 function obtenerUrlWix(wixString) {
