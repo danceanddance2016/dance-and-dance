@@ -97,7 +97,8 @@ const pageImage = imagenReal; // Usa la carátula concreta de este disco
       
       <!-- COLUMNA IZQUIERDA: Información y Plataformas -->
       <div class="detail-info-col">
-        <h1 class="album-main-title">
+        <!-- 🛡️ translate="no" impide que Google traduzca el nombre del disco -->
+        <h1 class="album-main-title" translate="no">
           {album.Title}
         </h1>
 
@@ -107,24 +108,24 @@ const pageImage = imagenReal; // Usa la carátula concreta de este disco
           </h3>
         )}
 
-        <!-- METADATOS -->
+        <!-- METADATOS LIMPIOS Y SIMPLES -->
         <div class="meta-info-box">
           {genre && (
             <div class="meta-row">
               <span class="meta-label">Genre:</span>
-              <span class="meta-value">{genre}</span>
+              <span class="meta-value" translate="no">{genre}</span>
             </div>
           )}
           {released && (
             <div class="meta-row">
-              <span class="meta-label">Released:</span>
+              <span class="meta-label">Date:</span>
               <span class="meta-value">{released}</span>
             </div>
           )}
         </div>
 
         <div class="stream-on-title">
-            Stream On:
+            Listen On:
         </div>
 
         <div class="platforms-grid">
@@ -186,12 +187,14 @@ const pageImage = imagenReal; // Usa la carátula concreta de este disco
     </div>
 
     <!-- TRACKLIST -->
+   <!-- TRACKLIST PROTEGIDO CONTRA TRADUCCIONES -->
     <div style="margin-top: 20px; margin-bottom: 0; padding-bottom: 0;">
       <h3 class="tracklist-header">TRACKLIST</h3>
       <div style="border-bottom: 2px solid #e0e0e0; margin-bottom: 12px; width: 100%;"></div>
-      <div class="wix-tracklist" set:html={tracklistLimpio} style="margin-bottom: 0; padding-bottom: 0;" />
+      <!-- 🛡️ translate="no" aquí blinda todos los nombres de canciones y artistas -->
+      <div class="wix-tracklist" translate="no" set:html={tracklistLimpio} style="margin-bottom: 0; padding-bottom: 0;" />
     </div>
-  </div>
+    </div>
 </Layout>
 
 <style is:global>
