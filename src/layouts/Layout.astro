@@ -2,12 +2,22 @@
 // Layout.astro - Estructura definitiva de Dance & Dance
 const { 
   title, 
-  description = "Dance & Dance - 100% Dance Music. Eurodance, Trance, Techno, House, Pop y mucho más de los 90s hasta hoy.",
-  image = "/favicon.jpg" // <--- Tu imagen con fondo blanco
+  description = "Dance & Dance - 100% Dance Music. Eurodance · Trance · Techno · House · Pop ··· 90s - Today",
+  image = "/favicon.jpg",
+  cardType = "summary"
 } = Astro.props;
 
+const siteURL = Astro.site ?? new URL(Astro.url.origin);
 const pageTitle = title ? `${title} | Dance & Dance` : "Dance & Dance | 100% Dance Music";
-const canonicalURL = Astro.url.href;
+const canonicalURL = new URL(Astro.url.pathname, siteURL).href;
+const imageURL = new URL(image, siteURL).href;
+
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Dance & Dance",
+  url: "https://danceanddance.vercel.app/",
+};
 ---
 
 <!DOCTYPE html>
