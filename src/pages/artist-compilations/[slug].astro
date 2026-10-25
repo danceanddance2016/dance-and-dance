@@ -11,12 +11,12 @@ function slugify(text) {
   if (!text) return "";
   return text
     .toLowerCase()
-    .replace(/ñ/g, "n")              // Cambia ñ por n
-    .normalize("NFD")               // Separa las tildes de las letras
+    .replace(/ñ/g, "n")                 // Cambia ñ por n
+    .normalize("NFD")                   // Separa las tildes de las letras
     .replace(/[\u0300-\u036f]/g, "") // Elimina las tildes limpiamente
     .replace(/[^a-z0-9 -]/g, "")     // Quita símbolos extraños
-    .replace(/\s+/g, "-")            // Cambia espacios por guiones
-    .replace(/-+/g, "-");            // Evita guiones dobles
+    .replace(/\s+/g, "-")             // Cambia espacios por guiones
+    .replace(/-+/g, "-");             // Evita guiones dobles
 }
 
 // 2. Parseamos el CSV
@@ -80,9 +80,15 @@ if (album.Categoría === 'Compilation') {
 } else if (album.Categoría === 'Artist') {
   backUrl = "/artist-compilations";
 }
+
+// 🔍 VARIABLES SEO PARA ESTE DISCO ESPECÍFICO
+const pageTitle = album.Title;
+const pageDescription = album.Description || `Escucha ${album.Title} en Dance & Dance. Descubre géneros, fechas y el tracklist completo.`;
+const pageImage = imagenReal; // Usa la carátula concreta de este disco
 ---
 
-<Layout title={`${album.Title} | Dance & Dance`}>
+<!-- AQUÍ PASAMOS LOS DATOS SEO AL LAYOUT -->
+<Layout title={pageTitle} description={pageDescription} image={pageImage}>
   <div class="detail-container">
     <div style="margin-bottom: 15px; font-style: italic;"><a href={backUrl} style="color:#000;">← Return</a></div>
 
@@ -189,6 +195,7 @@ if (album.Categoría === 'Compilation') {
 </Layout>
 
 <style is:global>
+  /* Tus estilos se quedan exactamente igual */
   .detail-container {
     max-width: 950px;
     margin: 10px auto 10px auto;
