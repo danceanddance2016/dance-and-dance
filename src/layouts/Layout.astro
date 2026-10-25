@@ -21,7 +21,7 @@ const websiteSchema = {
 ---
 
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -39,6 +39,7 @@ const websiteSchema = {
 		<meta property="og:image" content={image} />
 		<meta property="og:url" content={canonicalURL} />
 		<meta property="og:site_name" content="Dance & Dance" />
+		<meta property="og:locale" content={lang === "es" ? "es_ES" : "en_US"} />
 
 		<!-- 🐦 TWITTER CARDS -->
 		<meta name="twitter:card" content="summary_large_image" />
