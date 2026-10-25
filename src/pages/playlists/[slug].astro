@@ -6,6 +6,19 @@ import csvRaw from '../../data/Dance&Dance.csv?raw';
 // 1. Obtenemos el slug de la URL actual
 const { slug } = Astro.params;
 
+// Función slugify robusta y universal para tildes y eñes
+function slugify(text) {
+  if (!text) return "";
+  return text
+    .toLowerCase()
+    .replace(/ñ/g, "n")              // Cambia ñ por n
+    .normalize("NFD")               // Separa las tildes de las letras
+    .replace(/[\u0300-\u036f]/g, "") // Elimina las tildes limpiamente
+    .replace(/[^a-z0-9 -]/g, "")     // Quita símbolos extraños
+    .replace(/\s+/g, "-")            // Cambia espacios por guiones
+    .replace(/-+/g, "-");            // Evita guiones dobles
+}
+
 // 2. Parseamos el CSV
 const parsedData = Papa.parse(csvRaw, { header: true, skipEmptyLines: true });
 const rawAlbums = parsedData.data;
@@ -13,7 +26,7 @@ const rawAlbums = parsedData.data;
 const valid = rawAlbums.filter(a => a && a.Title && a.Status === "PUBLISHED");
 const sorted = valid.map(a => ({
   ...a,
-  slug: a.Title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-')
+  slug: slugify(a.Title)
 })).filter((a, i, s) => i === s.findIndex((t) => t.Title === a.Title)).sort((a, b) => {
   const dateA = a.Fecha ? new Date(a.Fecha).getTime() : 0;
   const dateB = b.Fecha ? new Date(b.Fecha).getTime() : 0;
@@ -21,11 +34,11 @@ const sorted = valid.map(a => ({
   return a.Title.localeCompare(b.Title);
 });
 
-// 3. Encontramos el álbum actual y la posición para las flechas de navegación (anterior y siguiente)
+// 3. Encontramos el álbum actual y la posición para las flechas de navegación
 const currentIndex = sorted.findIndex(a => a.slug === slug);
 const album = sorted[currentIndex];
 
-// Si no se encuentra el álbum, puedes redirigir o mostrar un 404
+// Si no se encuentra el álbum, redirigir a 404
 if (!album) {
   return Astro.redirect('/404');
 }
@@ -44,7 +57,7 @@ const olderSlug = currentIndex < sorted.length - 1 ? getAlbumUrl(sorted[currentI
 function obtenerUrlWix(wixString) {
   if (!wixString || !wixString.startsWith('wix:image')) return wixString;
   const partes = wixString.split('/');
-  const idImagen = partes[partes.length - 2]; 
+  const idImagen = partes[partes.length - 2];  
   return `https://static.wixstatic.com/media/${idImagen}`;
 }
 
