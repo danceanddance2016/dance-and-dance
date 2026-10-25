@@ -11,12 +11,25 @@ const parsedData = Papa.parse(csvRaw, {
 
 const rawAlbums = parsedData.data;
 
+// Función slugify robusta y universal para tildes y eñes
+function slugify(text) {
+  if (!text) return "";
+  return text
+    .toLowerCase()
+    .replace(/ñ/g, "n")              // Cambia ñ por n
+    .normalize("NFD")               // Separa las tildes de las letras
+    .replace(/[\u0300-\u036f]/g, "") // Elimina las tildes limpiamente
+    .replace(/[^a-z0-9 -]/g, "")     // Quita símbolos extraños
+    .replace(/\s+/g, "-")            // Cambia espacios por guiones
+    .replace(/-+/g, "-");            // Evita guiones dobles
+}
+
 // 2. Filtrar álbumes válidos y publicados
 const validAlbums = rawAlbums.filter(album => album && album.Title && album.Status === "PUBLISHED");
 
 const allAlbums = validAlbums.map(album => ({
   ...album,
-  slug: album.Title.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-')
+  slug: slugify(album.Title) // <--- Usando la función robusta
 }));
 
 const uniqueAlbums = allAlbums.filter((album, index, self) =>
