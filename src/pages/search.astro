@@ -1,0 +1,308 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Papa from 'papaparse';
+import csvRaw from '../data/Dance&Dance.csv?raw';
+
+// 1. Obtener la consulta desde la URL (?q=texto)
+const query = Astro.url.searchParams.get('q')?.trim() || '';
+
+// 2. Función slugify para los enlaces
+function slugify(text) {
+  if (!text) return "";
+  return text
+    .toLowerCase()
+    .replace(/ñ/g, "n")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9 -]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+}
+
+function obtenerUrlWix(wixString) {
+  if (!wixString || !wixString.startsWith('wix:image')) return wixString;
+  const partes = wixString.split('/');
+  const idImagen = partes[partes.length - 2]; 
+  return `https://static.wixstatic.com/media/${idImagen}`;
+}
+
+function getDetailUrl(album) {
+  const slug = slugify(album.Title);
+  if (album.Categoría === 'Compilation') return `/compilations/${slug}`;
+  if (album.Categoría === 'Playlist') return `/playlists/${slug}`;
+  if (album.Categoría === 'Artist') return `/artist-compilations/${slug}`;
+  return `/${slug}`;
+}
+
+// Función robusta para limpiar HTML y decodificar símbolos como &amp;
+function cleanTrackText(html) {
+  if (!html) return "";
+  const decoded = html
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>');
+  return decoded.replace(/<[^>]*>/g, "").trim();
+}
+
+// 3. Parsear el CSV y filtrar
+const parsedData = Papa.parse(csvRaw, { header: true, skipEmptyLines: true });
+const rawAlbums = parsedData.data;
+
+const validAlbums = rawAlbums.filter(a => a && a.Title && a.Status === "PUBLISHED");
+
+const queryLower = query.toLowerCase();
+const searchTerms = queryLower.split(' ').filter(term => term.trim() !== '');
+
+// Filtramos y procesamos las canciones coincidentes dentro del Tracklist
+const results = validAlbums
+  .filter(album => {
+    if (!query) return false;
+
+    const fullContent = Object.values(album)
+      .filter(val => val !== null && val !== undefined)
+      .join(' ')
+      .toLowerCase();
+
+    return searchTerms.every(term => fullContent.includes(term));
+  })
+  .sort((a, b) => {
+    const dateA = a.Fecha ? new Date(a.Fecha).getTime() : 0;
+    const dateB = b.Fecha ? new Date(b.Fecha).getTime() : 0;
+    if (dateB !== dateA) return dateB - dateA;
+    return a.Title.localeCompare(b.Title);
+  })
+  .map(album => {
+    let matchingTracks = [];
+    const tracklistText = album.Tracklist || album.Tracks || album.Canciones || '';
+    
+    if (tracklistText) {
+      // Si el tracklist usa etiquetas <li>, extraemos cada ítem completo por separado
+      const liMatches = tracklistText.match(/<li[^>]*>([\s\S]*?)<\/li>/gi);
+      let tracks = [];
+
+      if (liMatches && liMatches.length > 0) {
+        tracks = liMatches.map(li => cleanTrackText(li));
+      } else {
+        // Si no usa <li>, dividimos por saltos de línea o puntos y comas
+        tracks = tracklistText.split(/<br\s*\/?>|\r?\n|;/i).map(t => cleanTrackText(t));
+      }
+
+      matchingTracks = tracks.filter(t => 
+        t.length > 0 && searchTerms.some(term => t.toLowerCase().includes(term))
+      );
+    }
+
+    // Eliminar duplicados si los hubiera
+    matchingTracks = [...new Set(matchingTracks)];
+
+    return {
+      ...album,
+      matchingTracks
+    };
+  });
+---
+
+<Layout title={`Search: "${query}" | Dance & Dance`}>
+  <div class="search-container" translate="no">
+    
+    <h1 class="page-title">Search</h1>
+    <p class="search-status">
+      {query ? `Results for "${query}" (${results.length})` : 'Enter a term in the search bar.'}
+    </p>
+
+    {results.length > 0 ? (
+      <div class="search-results-list">
+        {results.map(album => (
+          <a href={getDetailUrl(album)} class="search-result-item">
+            <!-- Portada a la izquierda -->
+            <div class="result-image-wrapper">
+              <img src={obtenerUrlWix(album.Image)} alt={album.Title} loading="lazy" />
+            </div>
+
+            <!-- Detalles a la derecha -->
+            <div class="result-info">
+              <h2 class="album-title">{album.Title}</h2>
+              <span class="album-category">{album.Categoría} {album.Año ? `• ${album.Año}` : ''}</span>
+
+              {/* Coincidencias limpias */}
+              {album.matchingTracks.length > 0 && (
+                <div class="matching-tracks">
+                  <span class="tracks-label">Tracklist matches:</span>
+                  <ul>
+                    {album.matchingTracks.slice(0, 4).map(track => (
+                      <li>🎵 {track}</li>
+                    ))}
+                    {album.matchingTracks.length > 4 && (
+                      <li class="more-tracks">+ {album.matchingTracks.length - 4} more songs ...</li>
+                    )}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </a>
+        ))}
+      </div>
+    ) : (
+      query && <p class="no-results">No albums or tracks found matching your search.</p>
+    )}
+
+  </div>
+</Layout>
+
+<style is:global>
+  .search-container {
+    max-width: 850px;
+    margin: 20px auto !important;
+    padding: 0 20px;
+    font-family: 'Work Sans', sans-serif;
+  }
+
+  .page-title {
+    font-size: 54px !important;
+    font-style: italic !important;
+    color: #E0DEDE !important;
+    text-align: center !important;
+    margin-bottom: 10px !important;
+  }
+
+  .search-status {
+    text-align: center;
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 35px;
+    font-style: italic;
+  }
+
+  .no-results {
+    text-align: center;
+    color: #888;
+    margin-top: 40px;
+    font-style: italic;
+  }
+
+  .search-results-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .search-result-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid #eeeeee;
+    background-color: #ffffff;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+
+  .search-result-item:hover {
+    transform: translateY(-2px);
+    border-color: #cccccc;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  }
+
+  .result-image-wrapper {
+    width: 110px;
+    height: 110px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    border: 1px solid #000;
+    overflow: hidden;
+    background-color: #fcfcfc;
+  }
+
+  .result-image-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .result-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .album-title {
+    font-size: 20px;
+    font-weight: 600;
+    font-style: italic;
+    color: #111;
+    margin: 0 0 4px 0;
+    line-height: 1.2;
+  }
+
+  .album-category {
+    font-size: 13px;
+    color: #777;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+  }
+
+  .matching-tracks {
+    background-color: #f9f9f9;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-top: 4px;
+    border-left: 3px solid #222;
+  }
+
+  .tracks-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #555;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .matching-tracks ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .matching-tracks li {
+    font-size: 13px;
+    color: #333;
+    line-height: 1.4;
+  }
+
+  .more-tracks {
+    font-size: 11px !important;
+    color: #888 !important;
+    font-style: italic;
+    margin-top: 2px;
+  }
+
+  @media (max-width: 600px) {
+    .search-result-item {
+      gap: 12px;
+      padding: 12px;
+    }
+
+    .result-image-wrapper {
+      width: 85px;
+      height: 85px;
+    }
+
+    .album-title {
+      font-size: 16px;
+    }
+
+    .matching-tracks {
+      padding: 6px 8px;
+    }
+
+    .matching-tracks li {
+      font-size: 12px;
+    }
+  }
+</style>
