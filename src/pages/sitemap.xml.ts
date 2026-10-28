@@ -33,7 +33,9 @@ export const GET: APIRoute = async ({ site }) => {
     '/all-albums',
     '/compilations',
     '/playlists',
-    '/artist-compilations'
+    '/artist-compilations',
+    '/news',
+    '/more-playlists'
   ];
 
   // 4. Generar las URLs dinámicas de los discos según su categoría
