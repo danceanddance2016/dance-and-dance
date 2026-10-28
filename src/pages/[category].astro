@@ -11,12 +11,12 @@ function slugify(text) {
   if (!text) return "";
   return text
     .toLowerCase()
-    .replace(/ñ/g, "n")              // Cambia ñ por n
-    .normalize("NFD")               // Separa las tildes de las letras
+    .replace(/ñ/g, "n")               // Cambia ñ por n
+    .normalize("NFD")                 // Separa las tildes de las letras
     .replace(/[\u0300-\u036f]/g, "") // Elimina las tildes limpiamente
-    .replace(/[^a-z0-9 -]/g, "")     // Quita símbolos extraños
-    .replace(/\s+/g, "-")            // Cambia espacios por guiones
-    .replace(/-+/g, "-");            // Evita guiones dobles
+    .replace(/[^a-z0-9 -]/g, "")      // Quita símbolos extraños
+    .replace(/\s+/g, "-")             // Cambia espacios por guiones
+    .replace(/-+/g, "-");             // Evita guiones dobles
 }
 
 // 2. Parseamos y procesamos el CSV en cada petición del servidor
@@ -35,7 +35,7 @@ if (category === 'compilations') {
 
 const albums = validAlbums.map(a => ({
   ...a,
-  slug: slugify(a.Title) // <--- Usando la función robusta con tildes y eñes
+  slug: slugify(a.Title)
 })).filter((a, i, s) => i === s.findIndex((t) => t.Title === a.Title))
 .sort((a, b) => {
   const dateA = a.Fecha ? new Date(a.Fecha).getTime() : 0;
@@ -76,7 +76,7 @@ const albumsPorAno = albums.reduce((acc, album) => {
 
 const anosOrdenados = Object.keys(albumsPorAno).sort((a, b) => {
   if (a === 'Other') return 1;
-  if (a === 'Other') return -1;
+  if (b === 'Other') return -1;
   return Number(b) - Number(a);
 });
 ---
@@ -84,10 +84,22 @@ const anosOrdenados = Object.keys(albumsPorAno).sort((a, b) => {
 <Layout title={`${pageTitle} | Dance & Dance`}>
   <div class="catalog-container">
     
-    <h1 class="page-title">{pageTitle}</h1>
+   <h1 class="page-title">{pageTitle}</h1>
+
+    <!-- 📌 DESPLEGABLE COMPACTO DE AÑOS -->
+    {anosOrdenados.length > 1 && (
+      <div class="year-select-container">
+        <select id="year-jump-dropdown" class="year-dropdown" onchange="if(this.value) { document.getElementById(this.value).scrollIntoView({ behavior: 'smooth' }); }">
+          <option value="" disabled selected>Jump to year...</option>
+          {anosOrdenados.map(ano => (
+            <option value={`year-${ano}`}>{ano}</option>
+          ))}
+        </select>
+      </div>
+    )}
 
     {anosOrdenados.map(ano => (
-      <div class="year-block">
+      <div id={`year-${ano}`} class="year-block">
         <h2 class="year-title">{ano}</h2>
 
         <div class={category === 'all-albums' ? "albums-flex-grid grid-5-cols-mode" : "albums-flex-grid"}>
@@ -106,8 +118,13 @@ const anosOrdenados = Object.keys(albumsPorAno).sort((a, b) => {
 </Layout>
 
 <style is:global>
+  /* Desplazamiento suave para que el salto de año no sea brusco */
+  html {
+    scroll-behavior: smooth;
+  }
+
   .catalog-container {
-    max-width: 950px; /* <--- Igual que en index.astro */
+    max-width: 950px;
     margin: 10px auto 10px auto !important;
     padding: 0 20px;
     font-family: 'Work Sans', sans-serif;
@@ -119,13 +136,79 @@ const anosOrdenados = Object.keys(albumsPorAno).sort((a, b) => {
     font-style: italic !important;
     font-weight: 400 !important;
     color: #E0DEDE !important;
-    margin: 0 0 25px 0 !important;
+    margin: 0 0 15px 0 !important;
     text-align: center !important;
     line-height: 0.8em !important;
   }
 
+  /* 📌 ESTILOS DE LA BARRA DE AÑOS SUPERIOR */
+  /* Estilos del desplegable de años */
+  .year-select-container {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+
+  .year-dropdown {
+    font-family: 'Work Sans', sans-serif;
+    font-size: 14px;
+    font-style: italic;
+    padding: 8px 16px;
+    background-color: #fafafa;
+    border: 1px solid #ccc;
+    border-radius: 20px;
+    color: #333;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .year-dropdown:hover, .year-dropdown:focus {
+    border-color: #000;
+  }
+
+  .year-jump-bar {
+    margin: 0 auto 30px auto;
+    max-width: 800px;
+    padding: 8px 12px;
+    background-color: #fafafa;
+    border: 1px solid #eaeaea;
+    border-radius: 30px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+  }
+
+  .year-jump-scroll {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+
+  .year-jump-pill {
+    display: inline-block;
+    padding: 4px 12px;
+    background-color: #ffffff;
+    color: #333333;
+    border: 1px solid #cccccc;
+    border-radius: 15px;
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .year-jump-pill:hover {
+    background-color: #000000;
+    color: #ffffff;
+    border-color: #000000;
+    transform: translateY(-1px);
+  }
+
   .year-block {
-    margin-bottom: 20px !important;
+    margin-bottom: 25px !important;
+    /* Añadimos scroll-margin para compensar la barra fija superior de la web al hacer clic */
+    scroll-margin-top: 160px; 
   }
 
   .year-title {
@@ -140,12 +223,12 @@ const anosOrdenados = Object.keys(albumsPorAno).sort((a, b) => {
     border: none !important;
   }
 
- .albums-flex-grid {
+  .albums-flex-grid {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center; /* Centra perfectamente cualquier fila incompleta */
+    justify-content: center;
     gap: 25px;
-    max-width: 950px; /* Exactamente el mismo ancho máximo que el index.astro */
+    max-width: 950px;
     margin: 0 auto;
   }
 
@@ -154,7 +237,6 @@ const anosOrdenados = Object.keys(albumsPorAno).sort((a, b) => {
     color: inherit;
     display: block;
     text-align: center;
-    /* Calculamos exactamente el ancho para que quepan 4 por fila con un gap de 25px: (950 - (3 * 25)) / 4 = 218.75px */
     width: 218px; 
   }
 
@@ -180,7 +262,7 @@ const anosOrdenados = Object.keys(albumsPorAno).sort((a, b) => {
     transform: scale(1.03);
   }
 
-  /* 📱 ADAPTABILIDAD MÓVIL: 2 Portadas por línea */
+  /* 📱 ADAPTABILIDAD MÓVIL */
   @media (max-width: 768px) {
     .catalog-container {
       padding: 0 10px;
@@ -188,7 +270,26 @@ const anosOrdenados = Object.keys(albumsPorAno).sort((a, b) => {
 
     .page-title {
       font-size: 44px !important;
-      margin-bottom: 20px !important;
+      margin-bottom: 15px !important;
+    }
+
+    .year-jump-bar {
+      padding: 6px 8px;
+      margin-bottom: 20px;
+    }
+
+    .year-jump-scroll {
+      max-height: 100px; /* Permite hacer scroll vertical si hay muchos años en móvil */
+      justify-content: flex-start;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .year-jump-pill {
+      font-size: 12px;
+      padding: 3px 10px;
+      flex-shrink: 0;
     }
 
     .year-title {
@@ -202,7 +303,7 @@ const anosOrdenados = Object.keys(albumsPorAno).sort((a, b) => {
     }
 
     .album-card {
-      width: 48% !important; /* Cambiado a 48% para que entren exactamente 2 por fila */
+      width: 48% !important;
       max-width: none;
     }
   }
